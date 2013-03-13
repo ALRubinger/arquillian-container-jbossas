@@ -164,7 +164,6 @@
 		<module>jbossas-container-domain-managed-7.x</module>
 		<module>jbossas-container-remote-7.x</module>
 		<module>jbossas-container-domain-remote-7.x</module>
-		<module>jbossas-protocol-servlet-7.x</module>
 		<module>jbossas-testng-int-7.x</module>
 	</modules>
 </project>
