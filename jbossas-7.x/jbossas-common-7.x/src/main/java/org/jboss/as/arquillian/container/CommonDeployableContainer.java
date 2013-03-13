@@ -39,7 +39,6 @@ import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.descriptor.api.Descriptor;
-import org.jboss.util.NotImplementedException;
 
 /**
  * A JBossAS deployable container
@@ -67,7 +66,7 @@ public abstract class CommonDeployableContainer<T extends CommonContainerConfigu
 
     @Override
     public ProtocolDescription getDefaultProtocol() {
-        return new ProtocolDescription("jmx-as7");
+        return new ProtocolDescription("Servlet 3.0");
     }
 
     @Override
@@ -152,12 +151,12 @@ public abstract class CommonDeployableContainer<T extends CommonContainerConfigu
 
     @Override
     public void deploy(Descriptor descriptor) throws DeploymentException {
-        throw new NotImplementedException();
+        throw new UnsupportedOperationException("Not supported");
     }
 
     @Override
     public void undeploy(Descriptor descriptor) throws DeploymentException {
-        throw new NotImplementedException();
+        throw new UnsupportedOperationException("Not supported");
     }
 
     private void safeCloseClient() {
