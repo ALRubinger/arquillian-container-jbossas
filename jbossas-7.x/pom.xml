@@ -38,11 +38,11 @@
 	<name>Arquillian Container JBoss AS Parent 7.x</name>
 
 	<packaging>pom</packaging>
-	
-	<properties>
-	  <version.org.jboss.as>7.2.0.Final</version.org.jboss.as>
-	</properties>
-	
+
+    <properties>
+        <version.org.jboss.as>7.2.0.Final</version.org.jboss.as>
+    </properties>
+
 	<dependencyManagement>
 	  <dependencies>
         <dependency>
@@ -54,7 +54,7 @@
         </dependency>
       </dependencies>
     </dependencyManagement>
-    
+
     <dependencies>
       <dependency>
         <groupId>junit</groupId>
@@ -62,8 +62,8 @@
         <scope>test</scope>
       </dependency>
     </dependencies>
-    
-    
+
+
     <build>
         <plugins>
             <!-- Disable the animal-sniffer for AS7 Containers -->
@@ -90,7 +90,7 @@
               </executions>
             </plugin>
          </plugins>
-      
+
         <pluginManagement>
             <plugins>
                 <!-- Overly-verbose Eclipse config to make M2E not puke all over the place -->
@@ -155,6 +155,24 @@
             </plugins>
         </pluginManagement>
     </build>
+
+    <profiles>
+        <profile>
+            <id>jbossas-7.2.0.Final</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <version.org.jboss.as.dist>7.2.0.Final</version.org.jboss.as.dist>
+            </properties>
+        </profile>
+        <profile>
+            <id>jbossas-7.1.1.Final</id>
+            <properties>
+                <version.org.jboss.as.dist>7.1.1.Final</version.org.jboss.as.dist>
+            </properties>
+        </profile>
+    </profiles>
 
 	<modules>
 		<module>jbossas-common-7.x</module>

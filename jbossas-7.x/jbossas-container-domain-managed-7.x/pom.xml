@@ -98,7 +98,7 @@
                                 <artifactItem>
                                     <groupId>org.jboss.as</groupId>
                                     <artifactId>jboss-as-dist</artifactId>
-                                    <version>${version.org.jboss.as}</version>
+                                    <version>${version.org.jboss.as.dist}</version>
                                     <type>zip</type>
                                     <overWrite>false</overWrite>
                                     <outputDirectory>${project.build.directory}</outputDirectory>
@@ -123,7 +123,7 @@
                             <overwrite>true</overwrite>
                             <resources>
                                 <resource>
-                                    <directory>${project.build.directory}/jboss-as-${version.org.jboss.as}</directory>
+                                    <directory>${project.build.directory}/jboss-as-${version.org.jboss.as.dist}</directory>
                                 </resource>
                             </resources>
                         </configuration>

@@ -22,10 +22,9 @@
   -->
 
 <!--
-  Set these VM properties in your IDE debugger
+  Set this VM property in your IDE debugger
 
   -Djava.util.logging.manager=org.jboss.logmanager.LogManager
-  -Djboss.home=${workspace_loc:jboss-as-build}/target/jbossas
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -50,7 +49,7 @@
 		<dependency>
 			<groupId>org.jboss.arquillian.container</groupId>
 			<artifactId>arquillian-jbossas-common-7.x</artifactId>
-                        <version>${project.version}</version>
+            <version>${project.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.jboss.as</groupId>
