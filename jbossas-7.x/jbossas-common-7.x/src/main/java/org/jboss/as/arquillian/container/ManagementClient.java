@@ -124,7 +124,7 @@ public class ManagementClient {
         if (webUri == null) {
             try {
                 if (rootNode == null) {
-                    readRootNode();
+                    rootNode = new ModelNode();
                 }
             } catch (Exception e) {
                 throw new RuntimeException(e);
