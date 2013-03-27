@@ -94,8 +94,7 @@ public class ManagementClient {
     private URI webUri;
     private URI ejbUri;
 
-    // cache static RootNode
-    private ModelNode rootNode = null;
+    private final ModelNode rootNode = new ModelNode();
 
     private MBeanServerConnection connection;
     private JMXConnector connector;
@@ -122,13 +121,6 @@ public class ManagementClient {
      */
     public URI getWebUri() {
         if (webUri == null) {
-            try {
-                if (rootNode == null) {
-                    rootNode = new ModelNode();
-                }
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
             ModelNode socketBinding = rootNode.get("subsystem").get("web").get("connector").get("http").get("socket-binding");
             if(!socketBinding.isDefined()) {
                 try {
@@ -203,10 +195,6 @@ public class ManagementClient {
                 }
             }
         }
-    }
-
-    private void readRootNode() throws Exception {
-        rootNode = readResource(new ModelNode());
     }
 
     private static ModelNode defined(final ModelNode node, final String message) {
@@ -372,13 +360,6 @@ public class ManagementClient {
 
     public URI getRemoteEjbURL() {
         if (ejbUri == null) {
-            if (rootNode == null) {
-                try {
-                    readRootNode();
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            }
             String socketBinding = rootNode.get("subsystem").get("remoting").get("connector").get("remoting-connector").get("socket-binding").asString();
             ejbUri = getBinding("remote", socketBinding);
         }
