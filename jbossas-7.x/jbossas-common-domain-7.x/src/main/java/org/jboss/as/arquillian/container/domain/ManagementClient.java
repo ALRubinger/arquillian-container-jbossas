@@ -42,6 +42,7 @@ import static org.jboss.as.controller.client.helpers.ClientConstants.SUCCESS;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -51,11 +52,14 @@ import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXServiceURL;
 import javax.security.auth.callback.CallbackHandler;
 
+
 import org.jboss.arquillian.container.spi.client.protocol.metadata.HTTPContext;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.Servlet;
 import org.jboss.as.arquillian.container.domain.Domain.Server;
 import org.jboss.as.arquillian.container.domain.Domain.ServerGroup;
 import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.as.controller.client.helpers.ClientConstants;
+import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -83,8 +87,7 @@ public class ManagementClient {
     private final ModelControllerClient client;
     private final Map<String, URI> subsystemURICache;
 
-    // cache static RootNode
-    private ModelNode rootNode = null;
+    private final ModelNode rootNode = new ModelNode();
 
     private MBeanServerConnection connection;
     private JMXConnector connector;
@@ -100,58 +103,80 @@ public class ManagementClient {
     }
 
     // -------------------------------------------------------------------------------------||
-    // Public API -------------------------------------------------------------------------||
+    // Public API --------------------------------------------------------------------------||
     // -------------------------------------------------------------------------------------||
 
     public ModelControllerClient getControllerClient() {
         return client;
     }
 
+    private final ModelNode requestHostNode() {
+        final ModelNode request = new ModelNode().setEmptyList();
+        request.add(HOST, "*");
+        final ModelNode op = Operations.createReadResourceOperation(request);
+        op.get(ClientConstants.RECURSIVE).set(true);
+
+        final ModelNode response;
+        try {
+            response = client.execute(op);
+            checkSuccessful(response, op);
+        } catch (final Exception e) {
+            throw new RuntimeException(e);
+        }
+        return response;
+    }
+
     public Domain createDomain(Map<String, String> containerNameMap) {
-        lazyLoadRootNode();
 
-        Domain domain = new Domain();
-        for (String hostNodeName : rootNode.get(HOST).keys()) {
+        final Domain domain = new Domain();
+        final ModelNode response = this.requestHostNode();
 
-            for (String serverConfigName : rootNode.get(HOST).get(hostNodeName).get(SERVER_CONFIG).keys()) {
-                ModelNode serverConfig = rootNode.get(HOST).get(hostNodeName).get(SERVER_CONFIG).get(serverConfigName);
+        final Collection<ModelNode> responseList = response.get(RESULT).asList();
+        final ModelNode node = response;
+        for (ModelNode responseNode : responseList) {
+            final ModelNode hostsNode = responseNode.get(RESULT);
 
-                Server server = new Server(
-                        serverConfig.get(NAME).asString(),
-                        hostNodeName,
-                        serverConfig.get(GROUP).asString(),
-                        serverConfig.get(AUTO_START).asBoolean());
+            final String hostName = hostsNode.get(NAME).asString();
+            for (final String serverConfigName : hostsNode.get(SERVER_CONFIG).keys()) {
+                final ModelNode serverConfig = hostsNode.get(SERVER_CONFIG).get(serverConfigName);
 
-                if(containerNameMap.containsKey(server.getUniqueName())) {
+                final String groupName = serverConfig.get(GROUP).asString();
+                final boolean autoStart = serverConfig.get(AUTO_START).asBoolean();
+
+                final Server server = new Server(serverConfigName, hostName, groupName, autoStart);
+
+                if (containerNameMap.containsKey(server.getUniqueName())) {
                     server.setContainerName(containerNameMap.get(server.getUniqueName()));
                 }
+
+                final ServerGroup serverGroup = new ServerGroup(groupName);
+                if(containerNameMap.containsKey(groupName)) {
+                    serverGroup.setContainerName(containerNameMap.get(groupName));
+                }
+                domain.addServerGroup(serverGroup);
                 domain.addServer(server);
             }
         }
-        for (String serverGroupName : rootNode.get(SERVER_GROUP).keys()) {
 
-            ServerGroup group = new ServerGroup(serverGroupName);
-            if(containerNameMap.containsKey(group.getName())) {
-                group.setContainerName(containerNameMap.get(group.getName()));
-            }
-            domain.addServerGroup(group);
-        }
         return domain;
     }
 
-    public String getServerState(Domain.Server server) {
-        lazyLoadRootNode();
+    public String getServerState(final Domain.Server server) {
 
-        ModelNode hostNode = rootNode.get(HOST).get(server.getHost());
-        if (!hostNode.isDefined()) {
+        final ModelNode hostNodeResponse = this.requestHostNode();
+
+        final ModelNode hostNode = hostNodeResponse.get(RESULT).asList().get(0).get(RESULT);
+        final String hostName = hostNode.get(NAME).asString();
+        if(!hostName.equals(server.getHost())){
             throw new IllegalArgumentException("Host not found on domain " + server.getHost());
         }
 
-        ModelNode serverConfig = hostNode.get(SERVER_CONFIG).get(server.getName());
-        if (!serverConfig.isDefined()) {
+        final ModelNode serverConfigNode = hostNode.get(SERVER_CONFIG).get(server.getName());
+        if (!serverConfigNode.isDefined()) {
             throw new IllegalArgumentException("Server " + server + " not found on host " + server.getHost());
         }
-        return serverConfig.get(STATUS).asString();
+        final String serverStatus =serverConfigNode.get(STATUS).asString();
+        return serverStatus;
     }
 
     public HTTPContext getHTTPDeploymentMetaData(Server server, String uniqueDeploymentName) {
@@ -284,12 +309,7 @@ public class ManagementClient {
         }
     }
 
-    private void readRootNode() throws Exception {
-        rootNode = readResource(new ModelNode());
-    }
-
     private String getSocketBindingGroup(String serverGroup) {
-        lazyLoadRootNode();
         return rootNode.get(SERVER_GROUP).get(serverGroup).get(SOCKET_BINDING_GROUP).asString();
     }
 
@@ -372,18 +392,8 @@ public class ManagementClient {
     }
 
     // -------------------------------------------------------------------------------------||
-    // Common Management API Operations ---------------------------------------------------||
+    // Common Management API Operations ----------------------------------------------------||
     // -------------------------------------------------------------------------------------||
-
-    private void lazyLoadRootNode() {
-        try {
-            if (rootNode == null) {
-                readRootNode();
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
 
     private ModelNode readResource(ModelNode address) throws Exception {
         return readResource(address, true);
